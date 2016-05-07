@@ -27,6 +27,7 @@ public class AirportModel {
     private static final String FIELD_CODE = "code";
     private static final String FIELD_COUNTRY = "country";
 
+    private static final String PARAM_SORT_RELEVANCE = "relevance";
     private static final String PARAM_SORT_ELEVATION = "elevation";
     private static final String PARAM_SORT_DIRECT_FLIGHTS = "direct-flights";
     private static final String PARAM_ORDER_ASCENDING = "asc";
@@ -64,6 +65,11 @@ public class AirportModel {
 
             if (sort != null) {
                 switch (sort.toLowerCase()) {
+                    case PARAM_SORT_RELEVANCE: {
+                        if (order != null)
+                            searchRequestBuilder.addSort(SortBuilders.scoreSort().order(sortOrder));
+                        break;
+                    }
                     case PARAM_SORT_ELEVATION: {
                         searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_ELEVATION)
                                 .order(order == null ? SortOrder.ASC : sortOrder));
@@ -93,7 +99,14 @@ public class AirportModel {
             BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
             if (types != null) {
                 String[] typesArr = types.split(",");
-                if (typesArr.length > 0 && !typesArr[0].equalsIgnoreCase(PARAM_TYPE_ALL))
+                boolean all = false;
+                for (String type : typesArr) {
+                    if (type.equalsIgnoreCase(PARAM_TYPE_ALL)) {
+                        all = true;
+                        break;
+                    }
+                }
+                if (!all)
                     boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
             }
             if (q != null)

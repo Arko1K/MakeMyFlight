@@ -23,17 +23,42 @@
             app.controller('controller-root', ['$scope', '$http', function($scope, $http) {
                 // Constants
                 $scope.baseUrl = "http://localhost:9000/";
-                $scope.types = ["All", "Airports"];
-                $scope.sortOptions = ["Direct Flights", "Rating", "Elevation"];
+
+                $scope.types = [
+                    {label: "All", value: ["all"]},
+                    {label: "Civil Airports", value: ["airport", "airports"]}];
+
+                $scope.sortOptions = [
+                    {label: "Relevance", value: "relevance"},
+                    {label: "Direct Flights", value: "direct-flights"},
+                    {label: "Rating", value: "rating"},
+                    {label: "Elevation", value: "elevation"}];
+
+                // Initialization
+                $scope.from = 0;
+                $scope.size = 10;
+                $scope.typeIndices = [0];
+                $scope.sort = $scope.sortOptions[0].value;
+
+                $http({
+                    method: 'GET',
+                    url: $scope.baseUrl + "airport/count"
+                }).success(function (response) {
+                    if (response.success) {
+                        $scope.totalCount = response.data;
+                    }
+                });
+
 
                 $scope.search = function () {
+                    console.log("Search");
                     $http({
                         method: 'GET',
                         url: $scope.baseUrl + "airport",
                         params: {
                             from: $scope.from,
                             size: $scope.size,
-                            types: $scope.types,
+                            types: $scope.typeParams,
                             q: $scope.query,
                             sort: $scope.sort,
                             order: $scope.order
@@ -43,9 +68,33 @@
                             if ($scope.from == 0)
                                 $scope.searchResponse = response;
                             else
-                                $scope.searchResponse.data.results.push(response.data.results);
+                                $scope.searchResponse.data.results.push.apply($scope.searchResponse.data.results, response.data.results);
                         }
                     });
+                };
+
+                $scope.toggleType = function (index) {
+                    var i = $scope.typeIndices.indexOf(index);
+                    if (i == -1)
+                        $scope.typeIndices.push(index);
+                    else
+                        $scope.typeIndices.splice(i, 1);
+                    var all = false;
+                    if (index == 0) {
+                        if (i == -1)
+                            all = true;
+                    }
+                    else if ($scope.typeIndices.indexOf(0) != -1)
+                        all = true;
+                    if (all)
+                        $scope.typeParams = $scope.types[0].value[0];
+                    else {
+                        var typeArr = [];
+                        for (i = 0; i < $scope.typeIndices.length; i++)
+                            typeArr.push.apply(typeArr, $scope.types[$scope.typeIndices[i]].value);
+                        $scope.typeParams = typeArr.join(',');
+                    }
+                    $scope.search();
                 };
             }]);
         </script>
@@ -58,22 +107,22 @@
                     <div layout="column">
                         <fieldset>
                             <legend>Type</legend>
-                            <md-checkbox layout ng-repeat="type in types" ng-checked="exists(item, selected)" ng-click="toggle(item, selected)">
-                                {{ type }}
+                            <md-checkbox layout ng-repeat="type in types" ng-checked="typeIndices.indexOf($index) != -1" ng-click="toggleType($index)">
+                                {{ type.label }}
                             </md-checkbox>
                         </fieldset>
 
                         <fieldset>
                             <legend>Sort By</legend>
-                            <md-radio-group ng-model="sort">
-                                <md-radio-button ng-repeat="option in sortOptions" ng-value=option" >
-                                    {{ option }}
+                            <md-radio-group ng-model="sort" ng-click="search()">
+                                <md-radio-button ng-repeat="option in sortOptions" ng-value="option.value" >
+                                    {{ option.label }}
                                 </md-radio-button>
                             </md-radio-group>
                         </fieldset>
 
                         <div>
-                            Total Airports: <b>{{ searchResponse.data.totalCount }}</b>
+                            Total Airports: <b>{{ totalCount }}</b>
                         </div>
                     </div>
                 </div>
