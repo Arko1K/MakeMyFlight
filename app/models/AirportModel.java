@@ -4,6 +4,7 @@ package models;
 import common.Constants;
 import common.Global;
 import models.entities.Response;
+import models.entities.SearchResult;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -30,9 +31,10 @@ public class AirportModel {
     private static final String PARAM_SORT_DIRECT_FLIGHTS = "direct-flights";
     private static final String PARAM_ORDER_ASCENDING = "asc";
     private static final String PARAM_ORDER_DESCENDING = "desc";
+    private static final String PARAM_TYPE_ALL = "all";
 
 
-    public static Response getAirports(String from, String size, String type, String q, String sort, String order) {
+    public static Response getAirports(String from, String size, String types, String q, String sort, String order) {
         Response response = new Response();
 
         // Defaults and validations
@@ -89,18 +91,21 @@ public class AirportModel {
                 .setSize(sizeInt);
 
         BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
-        if (type != null)
-            boolQueryBuilder.filter(QueryBuilders.termQuery(FIELD_TYPE, type));
+        if (types != null) {
+            String[] typesArr = types.split(",");
+            if (typesArr.length > 0 && !typesArr[0].equalsIgnoreCase(PARAM_TYPE_ALL))
+                boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
+        }
         if (q != null)
             boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
         if (boolQueryBuilder.hasClauses())
             searchRequestBuilder.setQuery(boolQueryBuilder);
 
         SearchResponse searchResponse = searchRequestBuilder.execute().actionGet();
-        List<Map> result = new ArrayList<>();
+        List<Map> results = new ArrayList<>();
         for (SearchHit searchHit : searchResponse.getHits().getHits())
-            result.add(searchHit.getSource());
-        response.setData(result);
+            results.add(searchHit.getSource());
+        response.setData(new SearchResult(results, searchResponse.getHits().getTotalHits()));
         response.setSuccess(true);
         return response;
     }

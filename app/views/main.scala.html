@@ -1,23 +1,105 @@
-@*
- * This template is called from the `index` template. This template
- * handles the rendering of the page header and body tags. It takes
- * two arguments, a `String` for the title of the page and an `Html`
- * object to insert into the body of the page.
- *@
-@(title: String)(content: Html)
-
-<!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
     <head>
-        @* Here's where we render the page title `String`. *@
-        <title>@title</title>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
-        <script src="@routes.Assets.versioned("javascripts/hello.js")" type="text/javascript"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <!-- Angular Material style sheet -->
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.css">
     </head>
-    <body>
-        @* And here's where we render the `Html` object containing
-         * the page content. *@
-        @content
+
+    <body ng-app="mmf" ng-cloak>
+
+            <!-- Angular Material requires Angular.js Libraries -->
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-aria.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-messages.min.js"></script>
+
+            <!-- Angular Material Library -->
+        <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.js"></script>
+
+        <script type="text/javascript">
+            var app = angular.module('mmf', ['ngMaterial']);
+
+            app.controller('controller-root', ['$scope', '$http', function($scope, $http) {
+                // Constants
+                $scope.baseUrl = "http://localhost:9000/";
+                $scope.types = ["All", "Airports"];
+                $scope.sortOptions = ["Direct Flights", "Rating", "Elevation"];
+
+                $scope.search = function () {
+                    $http({
+                        method: 'GET',
+                        url: $scope.baseUrl + "airport",
+                        params: {
+                            from: $scope.from,
+                            size: $scope.size,
+                            types: $scope.types,
+                            q: $scope.query,
+                            sort: $scope.sort,
+                            order: $scope.order
+                        }
+                    }).success(function (response) {
+                        if (response.success) {
+                            if ($scope.from == 0)
+                                $scope.searchResponse = response;
+                            else
+                                $scope.searchResponse.data.results.push(response.data.results);
+                        }
+                    });
+                };
+            }]);
+        </script>
+
+        <div ng-controller="controller-root" layout="column">
+
+            <div layout>
+
+                <div flex="25">
+                    <div layout="column">
+                        <fieldset>
+                            <legend>Type</legend>
+                            <md-checkbox layout ng-repeat="type in types" ng-checked="exists(item, selected)" ng-click="toggle(item, selected)">
+                                {{ type }}
+                            </md-checkbox>
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Sort By</legend>
+                            <md-radio-group ng-model="sort">
+                                <md-radio-button ng-repeat="option in sortOptions" ng-value=option" >
+                                    {{ option }}
+                                </md-radio-button>
+                            </md-radio-group>
+                        </fieldset>
+
+                        <div>
+                            Total Airports: <b>{{ searchResponse.data.totalCount }}</b>
+                        </div>
+                    </div>
+                </div>
+
+                <div flex="75">
+                    <div layout="column">
+                        <md-input-container>
+                            <label>Search</label>
+                            <input type="text" ng-model="color">
+                        </md-input-container>
+
+                        <div>
+                            Result: <b>{{ searchResponse.data.matchCount }}</b> airports found.
+                        </div>
+
+                        <div>
+                            <div layout ng-repeat="result in searchResponse.data.results">
+                                {{ result.name }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
     </body>
 </html>
