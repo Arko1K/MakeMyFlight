@@ -36,77 +36,92 @@ public class AirportModel {
 
     public static Response getAirports(String from, String size, String types, String q, String sort, String order) {
         Response response = new Response();
-
-        // Defaults and validations
-        int fromInt = 0, sizeInt = 10;
         try {
-            if (from != null)
-                fromInt = Integer.valueOf(from);
-            if (size != null)
-                sizeInt = Integer.valueOf(size);
-        } catch (NumberFormatException nfe) {
-            response.setError(Constants.ERROR_INCORRECT_PARAMS);
-            return response;
-        }
-        SortOrder sortOrder = null;
-        if (order != null) {
-            if (order.equalsIgnoreCase(PARAM_ORDER_ASCENDING))
-                sortOrder = SortOrder.ASC;
-            else if (order.equalsIgnoreCase(PARAM_ORDER_DESCENDING))
-                sortOrder = SortOrder.DESC;
-            else {
+            // Defaults and validations
+            int fromInt = 0, sizeInt = 10;
+            try {
+                if (from != null)
+                    fromInt = Integer.valueOf(from);
+                if (size != null)
+                    sizeInt = Integer.valueOf(size);
+            } catch (NumberFormatException nfe) {
                 response.setError(Constants.ERROR_INCORRECT_PARAMS);
                 return response;
             }
-        }
-
-        SearchRequestBuilder searchRequestBuilder = Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport());
-
-        if (sort != null) {
-            switch (sort.toLowerCase()) {
-                case PARAM_SORT_ELEVATION: {
-                    searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_ELEVATION)
-                            .order(order == null ? SortOrder.ASC : sortOrder));
-                    break;
-                }
-                case PARAM_SORT_DIRECT_FLIGHTS: {
-                    searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_DIRECT_FLIGHTS)
-                            .order(order == null ? SortOrder.DESC : sortOrder));
-                    break;
-                }
-                case FIELD_RATING: {
-                    searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_RATING)
-                            .order(order == null ? SortOrder.DESC : sortOrder));
-                    break;
-                }
-                default: {
+            SortOrder sortOrder = null;
+            if (order != null) {
+                if (order.equalsIgnoreCase(PARAM_ORDER_ASCENDING))
+                    sortOrder = SortOrder.ASC;
+                else if (order.equalsIgnoreCase(PARAM_ORDER_DESCENDING))
+                    sortOrder = SortOrder.DESC;
+                else {
                     response.setError(Constants.ERROR_INCORRECT_PARAMS);
                     return response;
                 }
             }
+
+            SearchRequestBuilder searchRequestBuilder = Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport());
+
+            if (sort != null) {
+                switch (sort.toLowerCase()) {
+                    case PARAM_SORT_ELEVATION: {
+                        searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_ELEVATION)
+                                .order(order == null ? SortOrder.ASC : sortOrder));
+                        break;
+                    }
+                    case PARAM_SORT_DIRECT_FLIGHTS: {
+                        searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_DIRECT_FLIGHTS)
+                                .order(order == null ? SortOrder.DESC : sortOrder));
+                        break;
+                    }
+                    case FIELD_RATING: {
+                        searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_RATING)
+                                .order(order == null ? SortOrder.DESC : sortOrder));
+                        break;
+                    }
+                    default: {
+                        response.setError(Constants.ERROR_INCORRECT_PARAMS);
+                        return response;
+                    }
+                }
+            }
+
+            searchRequestBuilder.setTypes(Global.getEsTypeAirport())
+                    .setFrom(fromInt)
+                    .setSize(sizeInt);
+
+            BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
+            if (types != null) {
+                String[] typesArr = types.split(",");
+                if (typesArr.length > 0 && !typesArr[0].equalsIgnoreCase(PARAM_TYPE_ALL))
+                    boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
+            }
+            if (q != null)
+                boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
+            if (boolQueryBuilder.hasClauses())
+                searchRequestBuilder.setQuery(boolQueryBuilder);
+
+            SearchResponse searchResponse = searchRequestBuilder.execute().actionGet();
+            List<Map> results = new ArrayList<>();
+            for (SearchHit searchHit : searchResponse.getHits().getHits())
+                results.add(searchHit.getSource());
+            response.setData(new SearchResult(results, searchResponse.getHits().getTotalHits()));
+            response.setSuccess(true);
+        } catch (Exception ex) {
+            response.setError(ex.getMessage());
         }
+        return response;
+    }
 
-        searchRequestBuilder.setTypes(Global.getEsTypeAirport())
-                .setFrom(fromInt)
-                .setSize(sizeInt);
-
-        BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
-        if (types != null) {
-            String[] typesArr = types.split(",");
-            if (typesArr.length > 0 && !typesArr[0].equalsIgnoreCase(PARAM_TYPE_ALL))
-                boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
+    public static Response getAirportCount() {
+        Response response = new Response();
+        try {
+            response.setData(Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport()).setTypes(Global.getEsTypeAirport())
+                    .setSize(0).execute().actionGet().getHits().getTotalHits());
+            response.setSuccess(true);
+        } catch (Exception ex) {
+            response.setError(ex.getMessage());
         }
-        if (q != null)
-            boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
-        if (boolQueryBuilder.hasClauses())
-            searchRequestBuilder.setQuery(boolQueryBuilder);
-
-        SearchResponse searchResponse = searchRequestBuilder.execute().actionGet();
-        List<Map> results = new ArrayList<>();
-        for (SearchHit searchHit : searchResponse.getHits().getHits())
-            results.add(searchHit.getSource());
-        response.setData(new SearchResult(results, searchResponse.getHits().getTotalHits()));
-        response.setSuccess(true);
         return response;
     }
 }

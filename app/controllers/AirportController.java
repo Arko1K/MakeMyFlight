@@ -27,4 +27,8 @@ public class AirportController extends Controller {
                 request().getQueryString(QUERY_ORDER)))
                 .thenApply(result -> ok(Json.toJson(result)));
     }
+
+    public F.Promise<Result> getAirportCount() {
+        return F.Promise.promise(() -> AirportModel.getAirportCount()).thenApply(result -> ok(Json.toJson(result)));
+    }
 }
