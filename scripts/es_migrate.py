@@ -1,12 +1,11 @@
 import json
 import requests
-import sys
-import time
 
 HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
 TYPE = "airport"
 RECREATE_INDEX = True
+FILE_PATH = "./sql_dump.sql"
 
 
 def getElements(data):
@@ -89,7 +88,7 @@ print("Mappings")
 print(requests.post(elastic_to_index + "/_mapping/" + TYPE, data=json.dumps(mappings)).text)
 print(requests.post(elastic_to_index + "/_open").text)
 
-with open(sys.argv[0]) as f:
+with open(FILE_PATH) as f:
     content = f.readlines()
     count = 0
     for line in content:
