@@ -25,7 +25,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ngInfiniteScroll/1.2.2/ng-infinite-scroll.min.js"></script>
 
         <script type="text/javascript">
-            var app = angular.module('mmf', ['ngMaterial', 'infinite-scroll']);
+            var app = angular.module('mmf', ['ngMaterial', 'infinite-scroll']).config(function($mdThemingProvider) {
+                $mdThemingProvider.theme('default')
+                        .primaryPalette('light-blue')
+                        .accentPalette('blue');
+            });
 
             app.controller('controller-root', ['$scope', '$http', function($scope, $http) {
                 // Constants
@@ -39,8 +43,10 @@
 
                 // Initialization
                 $scope.loading = true;
+                $scope.componentsLoaded = 0;
                 $scope.size = 10;
                 $scope.sortIndex = 0;
+                $scope.order = "Desc";
 
                 $http({
                     method: 'GET',
@@ -50,6 +56,7 @@
                         $scope.types = [{label: "All", value: "all"}];
                         $scope.types.push.apply($scope.types, response.data);
                         $scope.typeIndices = [0];
+                        $scope.initialLoad();
                     }
                 });
 
@@ -133,11 +140,17 @@
                     if (stars)
                         return result.substring(0, rating);
                     return result.substring(0, 5 - rating);
+                };
+
+                $scope.initialLoad = function () {
+                    $scope.componentsLoaded += 1;
+                    if ($scope.componentsLoaded == 1)
+                        $scope.search();
                 }
             }]);
         </script>
 
-        <div ng-controller="controller-root" layout="column">
+        <div ng-controller="controller-root" layout="column" class="mainview">
 
             <div layout>
 
@@ -163,7 +176,7 @@
                     </div>
                 </div>
 
-                <div flex="75" layout="column">
+                <div flex="75" layout="column" style="margin-left: 20px">
                     <md-input-container>
                         <label>Search</label>
                         <input type="text" ng-model="query" ng-change="querySearch()">
@@ -183,7 +196,7 @@
 
                     <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1"
                     style="padding-top: 40px">
-                        <div layout ng-repeat="result in searchResponse.data.results" layout-margin="20" style="height: 125px">
+                        <div layout ng-repeat="result in searchResponse.data.results" layout-margin="25" class="list-item">
                             <div flex="20" layout>
                                 <img flex ng-src="https://raw.githubusercontent.com/hjnilsson/country-flags/master/png250px/{{ result.ctryCd }}.png"
                                 alt="Flag of {{ result.country }} not available" style="max-width: 100% ; max-height: 100%"/>
@@ -203,7 +216,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div flex="40" layout="column">
+                            <div flex layout="column">
                                 <div flex layout layout-align="start center">
                                     <a href="https://www.google.com/maps/@@{{ result.lat }},{{ result.lon }},15z" target="_blank"><img src="/assets/images/ic_place_black_24dp_2x.png" class="icon"/></a>
                                     <div class="icon-label">
