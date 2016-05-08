@@ -8,6 +8,8 @@
 
     <body ng-app="mmf" ng-cloak>
 
+        <script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+
             <!-- Angular Material requires Angular.js Libraries -->
         <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
@@ -17,8 +19,10 @@
             <!-- Angular Material Library -->
         <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.js"></script>
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ngInfiniteScroll/1.2.2/ng-infinite-scroll.min.js"></script>
+
         <script type="text/javascript">
-            var app = angular.module('mmf', ['ngMaterial']);
+            var app = angular.module('mmf', ['ngMaterial', 'infinite-scroll']);
 
             app.controller('controller-root', ['$scope', '$http', function($scope, $http) {
                 // Constants
@@ -35,10 +39,10 @@
                     {label: "Elevation", value: "elevation"}];
 
                 // Initialization
-                $scope.from = 0;
-                $scope.size = 20;
+                $scope.size = 10;
                 $scope.typeIndices = [0];
                 $scope.sort = $scope.sortOptions[0].value;
+                $scope.loading = true;
 
                 $http({
                     method: 'GET',
@@ -50,13 +54,16 @@
                 });
 
 
-                $scope.search = function () {
-                    console.log("Search");
+                $scope.search = function (from) {
+                    $scope.loading = true;
+
+                    if (from == null)
+                        from = 0;
                     $http({
                         method: 'GET',
                         url: $scope.baseUrl + "airport",
                         params: {
-                            from: $scope.from,
+                            from: from,
                             size: $scope.size,
                             types: $scope.typeParams,
                             q: $scope.query,
@@ -65,11 +72,12 @@
                         }
                     }).success(function (response) {
                         if (response.success) {
-                            if ($scope.from == 0)
+                            if (from == 0)
                                 $scope.searchResponse = response;
                             else
                                 $scope.searchResponse.data.results.push.apply($scope.searchResponse.data.results, response.data.results);
                         }
+                        $scope.loading = false;
                     });
                 };
 
@@ -135,7 +143,7 @@
                         Result: <b>{{ searchResponse.data.matchCount }}</b> airports found.
                     </div>
 
-                    <md-content>
+                    <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1">
                         <div layout ng-repeat="result in searchResponse.data.results" layout-margin="20">
                             <img flex="20" ng-src="https://raw.githubusercontent.com/hjnilsson/country-flags/master/png250px/{{ result.ctryCd }}.png" alt="Flag of {{ result.country }}" />
                             <div flex="40" layout="column">
@@ -163,7 +171,7 @@
                                 </div>
                             </div>
                         </div>
-                    </md-content>
+                    </div>
                 </div>
 
             </div>
