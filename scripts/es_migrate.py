@@ -1,5 +1,6 @@
 import json
 import requests
+import time
 
 HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
@@ -79,12 +80,14 @@ else:
     create_index_response = requests.put(elastic_to_index)
     print(create_index_response.text)
 
-requests.post(elastic_to_index + "/_close")
+time.sleep(5)
+
+print(requests.post(elastic_to_index + "/_close").text)
 print("Settings")
 print(requests.put(elastic_to_index + "/_settings", data=json.dumps(settings)).text)
 print("Mappings")
 print(requests.post(elastic_to_index + "/_mapping/" + TYPE, data=json.dumps(mappings)).text)
-requests.post(elastic_to_index + "/_open")
+print(requests.post(elastic_to_index + "/_open").text)
 
 with open(SEED_FILE_PATH) as f:
     content = f.readlines()
@@ -123,14 +126,12 @@ with open(SEED_FILE_PATH) as f:
                     "country": data[8].replace('\\', ''),
                     "tz": data[9],
                     "type": data[10],
-                    "url": data[11]
+                    "url": data[11],
+                    "directFlights": int(data[13])
                 }
                 elev = data[12]
                 if elev:
                     datadict['elev'] = int(elev)
-                directflights = data[12]
-                if directflights:
-                    datadict['directFlights'] = int(directflights)
 
                 if datadict['country'] not in country_codes:
                     res = requests.get(
