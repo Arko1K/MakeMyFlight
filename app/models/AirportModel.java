@@ -163,9 +163,13 @@ public class AirportModel {
             for (Terms.Bucket bucket : ((StringTerms) searchResponse.getAggregations().get(FIELD_TYPE)).getBuckets()) {
                 String key = bucket.getKeyAsString();
                 if (key.equalsIgnoreCase("airports"))
-                    airportTypes.add(new AirportType("Civil Airports", key));
-                else
-                    airportTypes.add(new AirportType(key.substring(0, 1).toUpperCase() + key.substring(1), key));
+                    airportTypes.add(new AirportType("Civil Airport", key));
+                else {
+                    String label = key.substring(0, 1).toUpperCase() + key.substring(1);
+                    if (label.charAt(label.length() - 1) == 's')
+                        label = label.substring(0, label.length() - 1);
+                    airportTypes.add(new AirportType(label, key));
+                }
             }
             response.setData(airportTypes);
             response.setSuccess(true);

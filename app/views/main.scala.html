@@ -29,10 +29,10 @@
                 $scope.baseUrl = "http://localhost:9000/";
 
                 $scope.sortOptions = [
-                    {label: "Relevance", value: "relevance"},
-                    {label: "Direct Flights", value: "direct-flights"},
-                    {label: "Rating", value: "rating"},
-                    {label: "Elevation", value: "elevation"}];
+                    {label: "Relevance", value: "relevance", order: "Desc"},
+                    {label: "Direct Flights", value: "direct-flights", order: "Desc"},
+                    {label: "Rating", value: "rating", order: "Desc"},
+                    {label: "Elevation", value: "elevation", order: "Asc"}];
 
                 // Initialization
                 $scope.loading = true;
@@ -44,7 +44,6 @@
                     url: $scope.baseUrl + "airport/type"
                 }).success(function (response) {
                     if (response.success) {
-                        console.log(response.data);
                         $scope.types = [{label: "All", value: "all"}];
                         $scope.types.push.apply($scope.types, response.data);
                         $scope.typeIndices = [0];
@@ -118,6 +117,11 @@
                     if ($scope.query.length > 1)
                         $scope.search();
                 };
+
+                $scope.sortSearch = function (index) {
+                    $scope.order = $scope.sortOptions[index].order;
+                    $scope.search();
+                };
             }]);
         </script>
 
@@ -135,7 +139,7 @@
 
                     <fieldset>
                         <legend>Sort By</legend>
-                        <md-radio-group ng-model="sort" ng-click="search()">
+                        <md-radio-group ng-model="sort" ng-click="sortSearch($index)">
                             <md-radio-button ng-repeat="option in sortOptions" ng-value="option.value" >
                                 {{ option.label }}
                             </md-radio-button>
@@ -155,8 +159,14 @@
 
                     <md-progress-linear md-mode="indeterminate" ng-show="loading"></md-progress-linear>
 
-                    <div ng-hide="loading">
-                        Result: <b>{{ searchResponse.data.matchCount }}</b> airports found.
+                    <div ng-hide="loading" layout>
+                        <div flex="80">
+                            Result: <b>{{ searchResponse.data.matchCount }}</b> airports found
+                        </div>
+
+                        <md-switch ng-model="order" ng-true-value="'Desc'" ng-false-value="'Asc'" flex="20">
+                            Order {{ order }}
+                        </md-switch>
                     </div>
 
                     <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1">
