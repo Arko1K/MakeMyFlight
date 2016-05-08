@@ -4,6 +4,9 @@
 
             <!-- Angular Material style sheet -->
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.css">
+
+        <link rel="stylesheet" type="text/css" href="/assets/stylesheets/main.css">
+
     </head>
 
     <body ng-app="mmf" ng-cloak>
@@ -37,7 +40,7 @@
                 // Initialization
                 $scope.loading = true;
                 $scope.size = 10;
-                $scope.sort = $scope.sortOptions[0].value;
+                $scope.sortIndex = 0;
 
                 $http({
                     method: 'GET',
@@ -118,8 +121,9 @@
                         $scope.search();
                 };
 
-                $scope.sortSearch = function (index) {
-                    $scope.order = $scope.sortOptions[index].order;
+                $scope.sortSearch = function () {
+                    $scope.sort = $scope.sortOptions[$scope.sortIndex].value;
+                    $scope.order = $scope.sortOptions[$scope.sortIndex].order;
                     $scope.search();
                 };
             }]);
@@ -139,8 +143,8 @@
 
                     <fieldset>
                         <legend>Sort By</legend>
-                        <md-radio-group ng-model="sort" ng-click="sortSearch($index)">
-                            <md-radio-button ng-repeat="option in sortOptions" ng-value="option.value" >
+                        <md-radio-group ng-model="sortIndex" ng-change="sortSearch()">
+                            <md-radio-button ng-repeat="option in sortOptions" ng-value="$index" >
                                 {{ option.label }}
                             </md-radio-button>
                         </md-radio-group>
@@ -164,16 +168,17 @@
                             Result: <b>{{ searchResponse.data.matchCount }}</b> airports found
                         </div>
 
-                        <md-switch ng-model="order" ng-true-value="'Desc'" ng-false-value="'Asc'" flex="20">
-                            Order {{ order }}
+                        <md-switch ng-model="order" ng-true-value="'Desc'" ng-false-value="'Asc'" ng-change="search()" flex="20">
+                            Order <b>{{ order }}</b>
                         </md-switch>
                     </div>
 
-                    <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1">
+                    <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1"
+                    style="padding-top: 40px">
                         <div layout ng-repeat="result in searchResponse.data.results" layout-margin="20" style="height: 125px">
                             <div flex="20" layout>
                                 <img flex ng-src="https://raw.githubusercontent.com/hjnilsson/country-flags/master/png250px/{{ result.ctryCd }}.png"
-                                alt="Flag of {{ result.country }}" style="max-width:100% ; max-height:100%"/>
+                                alt="Flag of {{ result.country }} not available" style="max-width:100% ; max-height:100%"/>
                             </div>
                             <div flex="40" layout="column">
                                 <div>
@@ -181,26 +186,27 @@
                                 </div>
                                 <div layout>
                                     <div>
-                                        <img src="/assets/images/ic_star_black_24dp_2x.png" />
+                                        <img src="/assets/images/ic_star_black_24dp_2x.png" class="icon"/>
                                         {{ result.rating }}
                                     </div>
-                                    <div>
-                                        {{ result.url }}
+                                    <div ng-show="result.url != null && result.url.length > 0">
+                                        <a href="{{ result.url }}" target="_blank"><img src="/assets/images/ic_info_black_24dp_2x.png" class="icon"/></a>
+                                        <a href="{{ result.url }}" target="_blank">Know more</a>
                                     </div>
                                 </div>
                             </div>
                             <div flex="40" layout="column">
                                 <div flex>
-                                    <img src="/assets/images/ic_place_black_24dp_2x.png" />
+                                    <a href="https://www.google.com/maps/@@{{ result.lat }},{{ result.lon }},15z" target="_blank"><img src="/assets/images/ic_place_black_24dp_2x.png" class="icon"/></a>
                                     {{ result.city }}, {{ result.country }}
                                 </div>
-                                <div flex>
-                                    <img src="/assets/images/ic_near_me_black_24dp_2x.png" />
-                                    Elevation: {{ result.elev }} ft
+                                <div flex ng-show="result.elev != null && result.elev.length > 0">
+                                    <img src="/assets/images/ic_near_me_black_24dp_2x.png" class="icon"/>
+                                    Elevation: <b>{{ result.elev }} ft</b>
                                 </div>
-                                <div flex>
-                                    <img src="/assets/images/ic_flight_black_24dp_2x.png" />
-                                    Direct Flights: {{ result.directFlights }}
+                                <div flex ng-show="result.directFlights != null">
+                                    <img src="/assets/images/ic_flight_black_24dp_2x.png" class="icon"/>
+                                    Direct Flights: <b>{{ result.directFlights }}</b>
                                 </div>
                             </div>
                         </div>

@@ -72,7 +72,7 @@ public class AirportModel {
             if (sort != null && !sort.isEmpty()) {
                 switch (sort.toLowerCase()) {
                     case PARAM_SORT_RELEVANCE: {
-                        if (sortOrder != null)
+                        if (sortOrder != null && sortOrder == SortOrder.ASC)
                             searchRequestBuilder.addSort(SortBuilders.scoreSort().order(sortOrder));
                         break;
                     }
