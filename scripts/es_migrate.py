@@ -5,8 +5,7 @@ HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
 TYPE = "airport"
 SEED_FILE_PATH = '/Users/arko/Downloads/mg.sql'
-
-elastic_to_index = "http://" + HOST_TO + ":9200/" + INDEX_TO
+RECREATE_INDEX = False
 
 
 def getElements(data):
@@ -28,14 +27,18 @@ def getElements(data):
     return elements
 
 
-# Delete target index if it exists
+elastic_to_index = "http://" + HOST_TO + ":9200/" + INDEX_TO
+
 res = requests.get(elastic_to_index)
 if res:
-    res = requests.delete(elastic_to_index)
-    print("Index deleted")
-
-create_index_response = requests.put(elastic_to_index)
-print(create_index_response.text)
+    if RECREATE_INDEX:
+        res = requests.delete(elastic_to_index)
+        print("Index deleted")
+        create_index_response = requests.put(elastic_to_index)
+        print(create_index_response.text)
+else:
+    create_index_response = requests.put(elastic_to_index)
+    print(create_index_response.text)
 
 with open(SEED_FILE_PATH) as f:
     content = f.readlines()
@@ -46,6 +49,17 @@ with open(SEED_FILE_PATH) as f:
             dataset = line.split("),(")
             size = len(dataset)
             print(size)
+
+            # These codes are not returned by the restcountries API
+            country_codes = {
+                "St. Helena": "",
+                "Netherlands Antilles": "",
+                "Democratic Republic of Congo": "",
+                "St. Lucia": "",
+                "Libyan Arab Jamahiriya": "",
+                "Antarctica": ""
+            }
+
             for i in range(size):
                 data = dataset[i]
                 if (i == size - 1):
@@ -56,11 +70,11 @@ with open(SEED_FILE_PATH) as f:
                     "code": data[1],
                     "lat": float(data[2]),
                     "lon": float(data[3]),
-                    "name": data[4],
+                    "name": data[4].replace('\\', ''),
                     "rating": float(data[5]),
-                    "city": data[6],
-                    "state": data[7],
-                    "country": data[8],
+                    "city": data[6].replace('\\', ''),
+                    "state": data[7].replace('\\', ''),
+                    "country": data[8].replace('\\', ''),
                     "tz": data[9],
                     "type": data[10],
                     "url": data[11]
@@ -71,6 +85,29 @@ with open(SEED_FILE_PATH) as f:
                 directflights = data[12]
                 if directflights:
                     datadict['directFlights'] = int(directflights)
+
+                if datadict['country'] not in country_codes:
+                    res = requests.get(
+                            "https://restcountries.eu/rest/v1/name/{}?fullText=true".format(datadict['country']))
+                    got_country = False
+                    country_data = None
+                    if res:
+                        country_data = json.loads(res.text)
+                        if (len(country_data) > 0 and 'alpha2Code' in country_data[0]):
+                            got_country = True
+                    if not got_country:
+                        res = requests.get("https://restcountries.eu/rest/v1/name/{}".format(datadict['country']))
+                        if res:
+                            country_data = json.loads(res.text)
+                            if (len(country_data) > 0 and 'alpha2Code' in country_data[0]):
+                                got_country = True
+                    if got_country:
+                        country_codes[datadict['country']] = country_data[0]['alpha2Code'].lower()
+                    else:
+                        print(country_codes[datadict['country']] + " Failed")
+                if datadict['country'] in country_codes:
+                    datadict['ctryCd'] = country_codes[datadict['country']]
+
                 if not json.loads(requests.post('{}/{}/{}'.format(elastic_to_index, TYPE, datadict['id']),
                                                 data=json.dumps(datadict)).text)['created']:
                     break
