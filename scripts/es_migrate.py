@@ -32,7 +32,7 @@ elastic_to_index = "http://" + HOST_TO + ":9200/" + INDEX_TO
 settings = {
     "analysis": {
         "analyzer": {
-            "term_index": {
+            "termIndex": {
                 "type": "custom",
                 "tokenizer": "keyword",
                 "filter": "lowercase"
@@ -48,7 +48,7 @@ mappings = {
             "fields": {
                 "term": {
                     "type": "string",
-                    "analyzer": "term_index"
+                    "analyzer": "termIndex"
                 }
             }
         },
@@ -57,9 +57,13 @@ mappings = {
             "fields": {
                 "term": {
                     "type": "string",
-                    "analyzer": "term_index"
+                    "analyzer": "termIndex"
                 }
             }
+        },
+        "type": {
+            "type": "string",
+            "analyzer": "termIndex"
         }
     }
 }

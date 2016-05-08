@@ -28,10 +28,6 @@
                 // Constants
                 $scope.baseUrl = "http://localhost:9000/";
 
-                $scope.types = [
-                    {label: "All", value: ["all"]},
-                    {label: "Civil Airports", value: ["airport", "airports"]}];
-
                 $scope.sortOptions = [
                     {label: "Relevance", value: "relevance"},
                     {label: "Direct Flights", value: "direct-flights"},
@@ -39,10 +35,21 @@
                     {label: "Elevation", value: "elevation"}];
 
                 // Initialization
-                $scope.size = 10;
-                $scope.typeIndices = [0];
-                $scope.sort = $scope.sortOptions[0].value;
                 $scope.loading = true;
+                $scope.size = 10;
+                $scope.sort = $scope.sortOptions[0].value;
+
+                $http({
+                    method: 'GET',
+                    url: $scope.baseUrl + "airport/type"
+                }).success(function (response) {
+                    if (response.success) {
+                        console.log(response.data);
+                        $scope.types = [{label: "All", value: "all"}];
+                        $scope.types.push.apply($scope.types, response.data);
+                        $scope.typeIndices = [0];
+                    }
+                });
 
                 $http({
                     method: 'GET',
@@ -97,11 +104,11 @@
                     else if ($scope.typeIndices.indexOf(0) != -1)
                         all = true;
                     if (all)
-                        $scope.typeParams = $scope.types[0].value[0];
+                        $scope.typeParams = $scope.types[0].value;
                     else {
                         var typeArr = [];
                         for (i = 0; i < $scope.typeIndices.length; i++)
-                            typeArr.push.apply(typeArr, $scope.types[$scope.typeIndices[i]].value);
+                            typeArr.push($scope.types[$scope.typeIndices[i]].value);
                         $scope.typeParams = typeArr.join(',');
                     }
                     $scope.search();

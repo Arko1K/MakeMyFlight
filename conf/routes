@@ -14,3 +14,4 @@ GET        /assets/*file         controllers.Assets.versioned(path="/public", fi
 
 GET        /airport              controllers.AirportController.getAirports
 GET        /airport/count        controllers.AirportController.getAirportCount
+GET        /airport/type         controllers.AirportController.getAirportTypes

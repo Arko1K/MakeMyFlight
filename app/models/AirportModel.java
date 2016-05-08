@@ -3,6 +3,7 @@ package models;
 
 import common.Constants;
 import common.Global;
+import models.entities.AirportType;
 import models.entities.Response;
 import models.entities.SearchResult;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -10,6 +11,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
@@ -141,6 +145,29 @@ public class AirportModel {
         try {
             response.setData(Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport()).setTypes(Global.getEsTypeAirport())
                     .setSize(0).execute().actionGet().getHits().getTotalHits());
+            response.setSuccess(true);
+        } catch (Exception ex) {
+            response.setError(ex.getMessage());
+        }
+        return response;
+    }
+
+    public static Response getAirportTypes() {
+        Response response = new Response();
+        try {
+            SearchResponse searchResponse = Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport())
+                    .setTypes(Global.getEsTypeAirport()).addAggregation(AggregationBuilders.terms(FIELD_TYPE).field(FIELD_TYPE))
+                    .setSize(0).execute().actionGet();
+
+            List<AirportType> airportTypes = new ArrayList<>();
+            for (Terms.Bucket bucket : ((StringTerms) searchResponse.getAggregations().get(FIELD_TYPE)).getBuckets()) {
+                String key = bucket.getKeyAsString();
+                if (key.equalsIgnoreCase("airports"))
+                    airportTypes.add(new AirportType("Civil Airports", key));
+                else
+                    airportTypes.add(new AirportType(key.substring(0, 1).toUpperCase() + key.substring(1), key));
+            }
+            response.setData(airportTypes);
             response.setSuccess(true);
         } catch (Exception ex) {
             response.setError(ex.getMessage());

@@ -31,4 +31,8 @@ public class AirportController extends Controller {
     public F.Promise<Result> getAirportCount() {
         return F.Promise.promise(() -> AirportModel.getAirportCount()).thenApply(result -> ok(Json.toJson(result)));
     }
+
+    public F.Promise<Result> getAirportTypes() {
+        return F.Promise.promise(() -> AirportModel.getAirportTypes()).thenApply(result -> ok(Json.toJson(result)));
+    }
 }
