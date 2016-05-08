@@ -1,5 +1,6 @@
 import json
 import requests
+import time
 
 HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
