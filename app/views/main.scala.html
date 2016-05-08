@@ -59,17 +59,19 @@
 
                     if (from == null)
                         from = 0;
+                    var searchParams = {
+                        from: from,
+                        size: $scope.size,
+                        types: $scope.typeParams,
+                        sort: $scope.sort,
+                        order: $scope.order
+                    };
+                    if ($scope.query != null && $scope.query.length > 1)
+                        searchParams['q'] = $scope.query;
                     $http({
                         method: 'GET',
                         url: $scope.baseUrl + "airport",
-                        params: {
-                            from: from,
-                            size: $scope.size,
-                            types: $scope.typeParams,
-                            q: $scope.query,
-                            sort: $scope.sort,
-                            order: $scope.order
-                        }
+                        params: searchParams
                     }).success(function (response) {
                         if (response.success) {
                             if (from == 0)
@@ -104,6 +106,11 @@
                     }
                     $scope.search();
                 };
+
+                $scope.querySearch = function () {
+                    if ($scope.query.length > 1)
+                        $scope.search();
+                };
             }]);
         </script>
 
@@ -136,10 +143,12 @@
                 <div flex="75" layout="column">
                     <md-input-container>
                         <label>Search</label>
-                        <input type="text" ng-model="query" ng-change="search()">
+                        <input type="text" ng-model="query" ng-change="querySearch()">
                     </md-input-container>
 
-                    <div>
+                    <md-progress-linear md-mode="indeterminate" ng-show="loading"></md-progress-linear>
+
+                    <div ng-hide="loading">
                         Result: <b>{{ searchResponse.data.matchCount }}</b> airports found.
                     </div>
 

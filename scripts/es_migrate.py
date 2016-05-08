@@ -5,7 +5,7 @@ HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
 TYPE = "airport"
 SEED_FILE_PATH = '/Users/arko/Downloads/mg.sql'
-RECREATE_INDEX = False
+RECREATE_INDEX = True
 
 
 def getElements(data):
@@ -29,6 +29,41 @@ def getElements(data):
 
 elastic_to_index = "http://" + HOST_TO + ":9200/" + INDEX_TO
 
+settings = {
+    "analysis": {
+        "analyzer": {
+            "term_index": {
+                "type": "custom",
+                "tokenizer": "keyword",
+                "filter": "lowercase"
+            }
+        }
+    }
+}
+
+mappings = {
+    "properties": {
+        "country": {
+            "type": "string",
+            "fields": {
+                "term": {
+                    "type": "string",
+                    "analyzer": "term_index"
+                }
+            }
+        },
+        "name": {
+            "type": "string",
+            "fields": {
+                "term": {
+                    "type": "string",
+                    "analyzer": "term_index"
+                }
+            }
+        }
+    }
+}
+
 res = requests.get(elastic_to_index)
 if res:
     if RECREATE_INDEX:
@@ -39,6 +74,13 @@ if res:
 else:
     create_index_response = requests.put(elastic_to_index)
     print(create_index_response.text)
+
+requests.post(elastic_to_index + "/_close")
+print("Settings")
+print(requests.put(elastic_to_index + "/_settings", data=json.dumps(settings)).text)
+print("Mappings")
+print(requests.post(elastic_to_index + "/_mapping/" + TYPE, data=json.dumps(mappings)).text)
+requests.post(elastic_to_index + "/_open")
 
 with open(SEED_FILE_PATH) as f:
     content = f.readlines()
@@ -52,12 +94,12 @@ with open(SEED_FILE_PATH) as f:
 
             # These codes are not returned by the restcountries API
             country_codes = {
-                "St. Helena": "",
-                "Netherlands Antilles": "",
-                "Democratic Republic of Congo": "",
-                "St. Lucia": "",
-                "Libyan Arab Jamahiriya": "",
-                "Antarctica": ""
+                "St. Helena": "sh",
+                "Netherlands Antilles": "an",
+                "Democratic Republic of Congo": "zr",
+                "St. Lucia": "lc",
+                "Libyan Arab Jamahiriya": "ly",
+                "Antarctica": "aq"
             }
 
             for i in range(size):

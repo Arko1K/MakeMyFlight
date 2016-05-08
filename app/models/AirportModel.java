@@ -24,8 +24,10 @@ public class AirportModel {
     private static final String FIELD_DIRECT_FLIGHTS = "directFlights";
     private static final String FIELD_RATING = "rating";
     private static final String FIELD_NAME = "name";
+    private static final String FIELD_NAME_TERM = "name.term";
     private static final String FIELD_CODE = "code";
     private static final String FIELD_COUNTRY = "country";
+    private static final String FIELD_COUNTRY_TERM = "country.term";
 
     private static final String PARAM_SORT_RELEVANCE = "relevance";
     private static final String PARAM_SORT_ELEVATION = "elevation";
@@ -109,8 +111,16 @@ public class AirportModel {
                 if (!all)
                     boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
             }
-            if (q != null && !q.isEmpty())
-                boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
+            if (q != null && !q.isEmpty()) {
+                // boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
+
+                boolQueryBuilder
+                        .should(QueryBuilders.matchQuery(FIELD_NAME_TERM, q).boost(2))
+                        .should(QueryBuilders.matchQuery(FIELD_NAME, q))
+                        .should(QueryBuilders.matchQuery(FIELD_COUNTRY_TERM, q).boost(2))
+                        .should(QueryBuilders.matchQuery(FIELD_COUNTRY, q))
+                        .should(QueryBuilders.matchQuery(FIELD_CODE, q).boost(2));
+            }
             if (boolQueryBuilder.hasClauses())
                 searchRequestBuilder.setQuery(boolQueryBuilder);
 
