@@ -1,11 +1,11 @@
 import json
 import requests
+import sys
 import time
 
 HOST_TO = 'localhost'
 INDEX_TO = 'mmf-airport'
 TYPE = "airport"
-SEED_FILE_PATH = '/Users/arko/Downloads/mg.sql'
 RECREATE_INDEX = True
 
 
@@ -89,7 +89,7 @@ print("Mappings")
 print(requests.post(elastic_to_index + "/_mapping/" + TYPE, data=json.dumps(mappings)).text)
 print(requests.post(elastic_to_index + "/_open").text)
 
-with open(SEED_FILE_PATH) as f:
+with open(sys.argv[0]) as f:
     content = f.readlines()
     count = 0
     for line in content:
