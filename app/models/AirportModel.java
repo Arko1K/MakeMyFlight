@@ -41,16 +41,16 @@ public class AirportModel {
             // Defaults and validations
             int fromInt = 0, sizeInt = 10;
             try {
-                if (from != null)
+                if (from != null && !from.isEmpty())
                     fromInt = Integer.valueOf(from);
-                if (size != null)
+                if (size != null && !size.isEmpty())
                     sizeInt = Integer.valueOf(size);
             } catch (NumberFormatException nfe) {
                 response.setError(Constants.ERROR_INCORRECT_PARAMS);
                 return response;
             }
             SortOrder sortOrder = null;
-            if (order != null) {
+            if (order != null && !order.isEmpty()) {
                 if (order.equalsIgnoreCase(PARAM_ORDER_ASCENDING))
                     sortOrder = SortOrder.ASC;
                 else if (order.equalsIgnoreCase(PARAM_ORDER_DESCENDING))
@@ -63,26 +63,26 @@ public class AirportModel {
 
             SearchRequestBuilder searchRequestBuilder = Global.getElasticTransportClient().prepareSearch(Global.getEsIndexAirport());
 
-            if (sort != null) {
+            if (sort != null && !sort.isEmpty()) {
                 switch (sort.toLowerCase()) {
                     case PARAM_SORT_RELEVANCE: {
-                        if (order != null)
+                        if (sortOrder != null)
                             searchRequestBuilder.addSort(SortBuilders.scoreSort().order(sortOrder));
                         break;
                     }
                     case PARAM_SORT_ELEVATION: {
                         searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_ELEVATION)
-                                .order(order == null ? SortOrder.ASC : sortOrder));
+                                .order(sortOrder == null ? SortOrder.ASC : sortOrder));
                         break;
                     }
                     case PARAM_SORT_DIRECT_FLIGHTS: {
                         searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_DIRECT_FLIGHTS)
-                                .order(order == null ? SortOrder.DESC : sortOrder));
+                                .order(sortOrder == null ? SortOrder.DESC : sortOrder));
                         break;
                     }
                     case FIELD_RATING: {
                         searchRequestBuilder.addSort(SortBuilders.fieldSort(FIELD_RATING)
-                                .order(order == null ? SortOrder.DESC : sortOrder));
+                                .order(sortOrder == null ? SortOrder.DESC : sortOrder));
                         break;
                     }
                     default: {
@@ -97,7 +97,7 @@ public class AirportModel {
                     .setSize(sizeInt);
 
             BoolQueryBuilder boolQueryBuilder = new BoolQueryBuilder();
-            if (types != null) {
+            if (types != null && !types.isEmpty()) {
                 String[] typesArr = types.split(",");
                 boolean all = false;
                 for (String type : typesArr) {
@@ -109,7 +109,7 @@ public class AirportModel {
                 if (!all)
                     boolQueryBuilder.filter(QueryBuilders.termsQuery(FIELD_TYPE, typesArr));
             }
-            if (q != null)
+            if (q != null && !q.isEmpty())
                 boolQueryBuilder.must(QueryBuilders.multiMatchQuery(q, FIELD_NAME, FIELD_CODE, FIELD_COUNTRY));
             if (boolQueryBuilder.hasClauses())
                 searchRequestBuilder.setQuery(boolQueryBuilder);

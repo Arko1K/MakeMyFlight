@@ -136,7 +136,7 @@
                 <div flex="75" layout="column">
                     <md-input-container>
                         <label>Search</label>
-                        <input type="text" ng-model="color">
+                        <input type="text" ng-model="query" ng-change="search()">
                     </md-input-container>
 
                     <div>
@@ -144,14 +144,18 @@
                     </div>
 
                     <div infinite-scroll='search(searchResponse.data.results.length)' infinite-scroll-disabled="loading" infinite-scroll-distance="1">
-                        <div layout ng-repeat="result in searchResponse.data.results" layout-margin="20">
-                            <img flex="20" ng-src="https://raw.githubusercontent.com/hjnilsson/country-flags/master/png250px/{{ result.ctryCd }}.png" alt="Flag of {{ result.country }}" />
+                        <div layout ng-repeat="result in searchResponse.data.results" layout-margin="20" style="height: 125px">
+                            <div flex="20" layout>
+                                <img flex ng-src="https://raw.githubusercontent.com/hjnilsson/country-flags/master/png250px/{{ result.ctryCd }}.png"
+                                alt="Flag of {{ result.country }}" style="max-width:100% ; max-height:100%"/>
+                            </div>
                             <div flex="40" layout="column">
                                 <div>
                                     {{ result.name }}
                                 </div>
                                 <div layout>
                                     <div>
+                                        <img src="/assets/images/ic_star_black_24dp_2x.png" />
                                         {{ result.rating }}
                                     </div>
                                     <div>
@@ -160,13 +164,16 @@
                                 </div>
                             </div>
                             <div flex="40" layout="column">
-                                <div>
+                                <div flex>
+                                    <img src="/assets/images/ic_place_black_24dp_2x.png" />
                                     {{ result.city }}, {{ result.country }}
                                 </div>
-                                <div>
+                                <div flex>
+                                    <img src="/assets/images/ic_near_me_black_24dp_2x.png" />
                                     Elevation: {{ result.elev }} ft
                                 </div>
-                                <div>
+                                <div flex>
+                                    <img src="/assets/images/ic_flight_black_24dp_2x.png" />
                                     Direct Flights: {{ result.directFlights }}
                                 </div>
                             </div>
